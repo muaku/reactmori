@@ -19,7 +19,7 @@ import { gotSinpakuKokyuuData } from "../actions/data"
 
 /* ------------------ Start MQTT --------------------- */
 init({
-    size: 10000,
+    size: 10000000000000,
     storageBackend: AsyncStorage,
     defaultExpires: 1000 * 3600 * 24,
     enableCache: true,
@@ -51,7 +51,7 @@ client.onMessageArrived = onMessageArrived;
 client.connect({onSuccess: onConnect});
 
 /* --------------------- End MQTT --------------------------- */
-
+var setIntervalId
 class HomePage extends Component {
     state = {
         smileBgColor: ["#fff","#fff","#fff","#fff","#fff","#fff","#fff","#fff","#fff","#fff"]
@@ -72,7 +72,7 @@ class HomePage extends Component {
 
     /* Generate random data for smile Item */
     testSmileBgColor() {
-        setInterval(() => {
+        return setInterval(() => {
             var index = Math.floor((Math.random() * 10))    /* Return a number btw 0-9 */
             this.updateSmileBgColor(index)
         }, 3000)
@@ -80,7 +80,13 @@ class HomePage extends Component {
 
     componentDidMount() {
         console.log("HOME MOUNTED")
-        this.testSmileBgColor()
+        setIntervalId = this.testSmileBgColor()
+    }
+
+    /* When component will unmounted, then clear the setInterval */
+    componentWillUnmount(){
+        /* We hv to clear this setInterval to prevent calling setState on unmounted component */
+        clearInterval(setIntervalId)
     }
 
     render () {
@@ -98,8 +104,10 @@ class HomePage extends Component {
         return (
             <View style={styles.container}>
                 <View style={styles.header} >
-                    <Image style={styles.profileImage} source={require("../images/icon.png")} resizeMode="cover" />
-                    <View style={styles.percentItemView} >
+                    <View style={styles.imageContainer} >
+                        <Image style={styles.profileImage} source={require("../images/icon.png")} resizeMode="cover" />
+                    </View>
+                     <View style={styles.percentItemView} >
                         <Text>ニコニコ指数</Text>
                         <View style={[styles.percentItem,{backgroundColor: this.state.smileBgColor[9]}]}><Text style={{ flex:1, textAlign:"center"}} >100%</Text></View>
                         <View style={[styles.percentItem,{backgroundColor: this.state.smileBgColor[8]}]}><Text style={{ flex:1, textAlign:"center"}} >90%</Text></View>
@@ -158,11 +166,14 @@ const styles = StyleSheet.create({
     color: {
         backgroundColor: "#ff75aa"
     },
-    profileImage: {
-        width: 200,
-        height: 230,
+    imageContainer: {
+        alignItems: "center",
         borderColor: "#ff75aa",
         borderWidth: 5
+    },
+    profileImage: {
+        width: 200,
+        height: 250
     },
     title: { 
         fontSize:24, 

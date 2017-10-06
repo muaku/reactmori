@@ -14,7 +14,8 @@ import {
   ScrollView,
   TouchableHighlight,
   View,
-  Image
+  Image,
+  KeyboardAvoidingView
 } from 'react-native';
 
 /* Label component */
@@ -105,6 +106,7 @@ class LoginPage extends Component {
                             value={this.state.data.email}
                             onChangeText={this._onEmailChange}
                             placeholder="example@email.com"
+                            placeholderTextColor="grey"
                             />
                         {/* If there is an email error then,..  */}
                         {this.state.errors.email && <Text style={styles.errMsg}>{this.state.errors.email}</Text>}
@@ -117,6 +119,7 @@ class LoginPage extends Component {
                             value={this.state.data.password}
                             onChangeText={this._onPasswordChange}
                             placeholder="パスワード"
+                            placeholderTextColor="grey"
                             />
                         {this.state.errors.password && <Text style={styles.errMsg}>{this.state.errors.password}</Text>}
 
@@ -178,7 +181,8 @@ const styles = StyleSheet.create({
     },
     textInput: {
         height: 60,
-        fontSize: 16
+        fontSize: 16,
+        paddingHorizontal: 10
     },
     errMsg: {
         fontSize: 14,
