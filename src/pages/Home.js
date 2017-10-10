@@ -16,6 +16,7 @@ import * as _ from "lodash"
 
 import { SinpakuCard, KokyuuCard} from "../cards/ItemCard"
 import { gotSinpakuKokyuuData } from "../actions/data"
+import { gotFaceData } from "../actions/data"
 
 /* ------------------ Start MQTT --------------------- */
 //Set up an in-memory alternative to global localStorage 
@@ -30,7 +31,7 @@ const myStorage = {
 };
 
 // Create a client instance 
-const client = new Client({ uri: 'ws://192.168.1.111:9001/ws', clientId: 'clientId', storage: myStorage });
+const client = new Client({ uri: 'ws://192.168.1.111:9001/ws', clientId: 'mk' + (Math.random()*100).toString(), storage: myStorage });
 
 // set event handlers 
 client.on('connectionLost', (responseObject) => {
@@ -39,10 +40,20 @@ client.on('connectionLost', (responseObject) => {
   }
 });
 client.on('messageReceived', (message) => {
+    var topic = message.destinationName
     var data = message.payloadString
-    console.log("onMessageArrived: " + data);
-    /* Dispatch data to update UI */
-    gotSinpakuKokyuuData(data)
+    console.log(topic)
+    // console.log("onMessageArrived: " + data);
+    if(topic == "microsensor/micro") {
+        /* Dispatch data to update sinpaku kokyuu UI */
+        console.log("on micro MessageArrived: " + data);
+        gotSinpakuKokyuuData(data)
+    }else if(topic == "camera") {
+        console.log("on camera MessageArrived: " + data);
+         /* Dispatch data to update 笑顔 UI */
+         gotFaceData(data)
+    }
+    
 });
  
 // connect the client 
@@ -72,6 +83,8 @@ class HomePage extends Component {
 
     // Define state
     state = {
+        heart: 0,
+        breath: 0,
         smileBgColor: ["#fff","#fff","#fff","#fff","#fff","#fff","#fff","#fff","#fff","#fff"]
     }
 
@@ -79,8 +92,10 @@ class HomePage extends Component {
     updateSmileBgColor(toIndex) {       /* toIndex: 0-9 (0%:noIndex,10%:0Index) */
         let color = "#ff75aa"
         let smileBgColor = ["#fff","#fff","#fff","#fff","#fff","#fff","#fff","#fff","#fff","#fff"]
-        for(let i = 0; i<= toIndex; i++) {
-            smileBgColor[i] = color
+        if(toIndex !== -1) {
+            for(let i = 0; i<= toIndex; i++) {
+                smileBgColor[i] = color
+            }
         }
         this.setState({
             smileBgColor: smileBgColor
@@ -88,23 +103,86 @@ class HomePage extends Component {
 
     }
 
-    /* Generate random data for smile Item */
-    testSmileBgColor() {
-        return setInterval(() => {
-            var index = Math.floor((Math.random() * 10))    /* Return a number btw 0-9 */
-            this.updateSmileBgColor(index)
-        }, 3000)
+    /* Handle Smile element , joyEmoData: 0~100 → 0~9*/
+    _handleSmileElement(joyEmoData) {
+        console.log("joyEmoData: ", joyEmoData)
+        var joyEmoNormalize 
+        if(joyEmoData<5) {
+            joyEmoNormalize = -1    // Render nothing
+        }else if(joyEmoData>=5 && joyEmoData<15) {
+            joyEmoNormalize = 0
+        }
+        else if(joyEmoData>=15 && joyEmoData<25) {
+            joyEmoNormalize = 1
+        }
+        else if(joyEmoData>=25 && joyEmoData<35) {
+            joyEmoNormalize = 2
+        }
+        else if(joyEmoData>=35 && joyEmoData<45) {
+            joyEmoNormalize = 3
+        }
+        else if(joyEmoData>=45 && joyEmoData<55) {
+            joyEmoNormalize = 4
+        }
+        else if(joyEmoData>=55 && joyEmoData<65) {
+            joyEmoNormalize = 5
+        }
+        else if(joyEmoData>=65 && joyEmoData<75) {
+            joyEmoNormalize = 6
+        }
+        else if(joyEmoData>=75 && joyEmoData<85) {
+            joyEmoNormalize = 7
+        }
+        else if(joyEmoData>=85 && joyEmoData<95) {
+            joyEmoNormalize = 8
+        }
+        else if(joyEmoData>95) {
+            joyEmoNormalize = 9
+        }
+        console.log("joyEmoNormalize: ", joyEmoNormalize)
+        this.updateSmileBgColor(joyEmoNormalize)
+        
     }
 
-    componentDidMount() {
-        console.log("HOME MOUNTED")
-        setIntervalId = this.testSmileBgColor()
-    }
+    // /* Generate random data for smile Item */
+    // testSmileBgColor() {
+    //     return setInterval(() => {
+    //         var index = Math.floor((Math.random() * 10))    /* Return a number btw 0-9 */
+    //         this.updateSmileBgColor(index)
+    //     }, 3000)
+    // }
 
-    /* When component will unmounted, then clear the setInterval */
-    componentWillUnmount(){
-        /* We hv to clear this setInterval to prevent calling setState on unmounted component */
-        clearInterval(setIntervalId)
+    // componentDidMount() {
+    //     console.log("HOME MOUNTED")
+    //     //setIntervalId = this.testSmileBgColor()
+    // }
+
+    // /* When component will unmounted, then clear the setInterval */
+    // componentWillUnmount(){
+    //     /* We hv to clear this setInterval to prevent calling setState on unmounted component */
+    //     //clearInterval(setIntervalId)
+    // }
+    
+    /* Handle render data */
+    componentWillReceiveProps(nextProps) {
+        var nextData = JSON.parse(nextProps.data)
+        var preData = JSON.parse(this.props.data)
+        console.log("WillReceiveProps data: ", nextData)
+        var { joyEmo, heart, breath } = (nextData)
+        if(joyEmo) {
+            console.log("joyEmo: ", joyEmo)
+            this._handleSmileElement(parseInt(joyEmo))
+            this.setState({
+                heart: preData.heart,
+                breath: preData.breath
+            })
+        }
+        if(heart && breath) {
+            this.setState({
+                heart: heart,
+                breath: breath
+            })
+        }
     }
 
     render () {
@@ -113,12 +191,12 @@ class HomePage extends Component {
         /* To prevent when no data yet BUG */
         if(!_.isEmpty(this.props.data)){
             console.log("NOTEMPTY")
-            var { heart, breath } = JSON.parse(this.props.data)
+            var { heart, breath } = this.state
         }else{
             console.log("EMPTY")
             var { heart, breath } = {heart:0,breath:0}
         }
-         
+
         return (
             <View style={styles.container}>
                 <View style={styles.header} >
@@ -139,7 +217,7 @@ class HomePage extends Component {
                         <View style={[styles.percentItem,{backgroundColor: this.state.smileBgColor[0]}]}><Text style={{ flex:1, textAlign:"center"}} >10%</Text></View>
                     </View>
                 </View>
-                <Text style={styles.title} >今日の尾崎さんのヘルスデータ</Text>
+                <Text style={styles.title} >今日のあなたのヘルスデータ</Text>
                 <View style={styles.cardContainer}>
                     <SinpakuCard imageName="sinpaku.jpg" value={heart} /> 
                     <KokyuuCard imageName="kokyuu.png" value={breath} /> 
@@ -159,7 +237,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#ECECEC",
         flex: 1,
         flexDirection: "column",
-        paddingTop: 20,
+        padding: 5,
     },
     header: {
         flex:1,

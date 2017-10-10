@@ -1,4 +1,4 @@
-import { SINPAKU_KOKYUU_DATA_IN } from "../types"
+import { SINPAKU_KOKYUU_DATA_IN, FACE_DATA_IN } from "../types"
 import { store } from "../store"
 
 let dispatch = store.dispatch
@@ -14,6 +14,13 @@ let dispatch = store.dispatch
 export const gotSinpakuKokyuuData = (data) => {
     dispatch({
         type: SINPAKU_KOKYUU_DATA_IN,   // type
+        data
+    })
+}
+
+export const gotFaceData = (data) => {
+    dispatch({
+        type: FACE_DATA_IN,
         data
     })
 }
