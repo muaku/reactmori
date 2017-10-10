@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from "prop-types"
-import init from 'react_native_mqtt';
+import { Client, Message } from 'react-native-paho-mqtt';
 import { AsyncStorage } from 'react-native';
 import {
   StyleSheet,
@@ -18,41 +18,59 @@ import { SinpakuCard, KokyuuCard} from "../cards/ItemCard"
 import { gotSinpakuKokyuuData } from "../actions/data"
 
 /* ------------------ Start MQTT --------------------- */
-init({
-    size: 10000000000000,
-    storageBackend: AsyncStorage,
-    defaultExpires: 1000 * 3600 * 24,
-    enableCache: true,
-    sync : {
-    }
+//Set up an in-memory alternative to global localStorage 
+const myStorage = {
+  setItem: (key, item) => {
+    myStorage[key] = item;
+  },
+  getItem: (key) => myStorage[key],
+  removeItem: (key) => {
+    delete myStorage[key];
+  },
+};
+
+// Create a client instance 
+const client = new Client({ uri: 'ws://192.168.1.111:9001/ws', clientId: 'clientId', storage: myStorage });
+
+// set event handlers 
+client.on('connectionLost', (responseObject) => {
+  if (responseObject.errorCode !== 0) {
+    console.log(responseObject.errorMessage);
+  }
 });
-
-function onConnect() {
-    console.log("*********** onConnect ****************");
-    client.subscribe("#")
-}
-
-function onConnectionLost(responseObject) {
-    if (responseObject.errorCode !== 0) {
-            console.log("onConnectionLost:"+responseObject.errorMessage);
-    }
-}
-
-function onMessageArrived(message) {
+client.on('messageReceived', (message) => {
     var data = message.payloadString
     console.log("onMessageArrived: " + data);
     /* Dispatch data to update UI */
     gotSinpakuKokyuuData(data)
-}
-
-var client = new Paho.MQTT.Client('192.168.1.111', 9001, 'unique_client_name');
-client.onConnectionLost = onConnectionLost;
-client.onMessageArrived = onMessageArrived;
-client.connect({onSuccess: onConnect});
+});
+ 
+// connect the client 
+client.connect()
+  .then(() => {
+    // Once a connection has been made, make a subscription and send a message. 
+    console.log("*********** onConnect ****************");
+    return client.subscribe("#");
+  })
+  .catch((responseObject) => {
+    if (responseObject.errorCode !== 0) {
+      console.log('onConnectionLost:' + responseObject.errorMessage);
+    }
+  })
 
 /* --------------------- End MQTT --------------------------- */
 var setIntervalId
 class HomePage extends Component {
+    // setup tabar options
+    static navigationOptions = {
+        tabBarLabel: "Home",
+        title: "Home",
+        headerStyle: {
+            backgroundColor: "#52B3D9"
+        }
+    }
+
+    // Define state
     state = {
         smileBgColor: ["#fff","#fff","#fff","#fff","#fff","#fff","#fff","#fff","#fff","#fff"]
     }
@@ -108,7 +126,7 @@ class HomePage extends Component {
                         <Image style={styles.profileImage} source={require("../images/icon.png")} resizeMode="cover" />
                     </View>
                      <View style={styles.percentItemView} >
-                        <Text>ニコニコ指数</Text>
+                        <Text style={{ color: "#446CB3"}} >ニコニコ指数</Text>
                         <View style={[styles.percentItem,{backgroundColor: this.state.smileBgColor[9]}]}><Text style={{ flex:1, textAlign:"center"}} >100%</Text></View>
                         <View style={[styles.percentItem,{backgroundColor: this.state.smileBgColor[8]}]}><Text style={{ flex:1, textAlign:"center"}} >90%</Text></View>
                         <View style={[styles.percentItem,{backgroundColor: this.state.smileBgColor[7]}]}><Text style={{ flex:1, textAlign:"center"}} >80%</Text></View>
@@ -138,17 +156,18 @@ class HomePage extends Component {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: "#C5EFF7",
+        backgroundColor: "#ECECEC",
         flex: 1,
         flexDirection: "column",
-        padding: 5
+        paddingTop: 20,
     },
     header: {
         flex:1,
         flexDirection: "row",
         alignItems: "flex-end",
         justifyContent: "space-around",
-        marginBottom: 15,
+        marginTop: 10,
+        marginBottom: 20,
         paddingLeft: 10
     },
     percentItemView: {
@@ -172,11 +191,12 @@ const styles = StyleSheet.create({
         borderWidth: 5
     },
     profileImage: {
-        width: 200,
-        height: 250
+        width: 180,
+        height: 220
     },
     title: { 
         fontSize:24, 
+        color: "#446CB3",
         fontWeight: "bold",
         textAlign: "center"
     },

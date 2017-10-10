@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
         width: 100,
         height:100,
         borderWidth:3,
-        borderColor: "#eee",
+        borderColor: "#913D88",
         borderRadius:50
     },
     title: {
@@ -171,13 +171,15 @@ const styles = StyleSheet.create({
     },
     button: {
         padding:20,
-        backgroundColor: '#34A853',
+        backgroundColor: '#52B3D9',
         alignItems: "center",
         marginTop: 20,
         borderRadius: 5
     },
     buttonText: {
-        fontSize: 18
+        fontSize: 18,
+        color: "white",
+        fontWeight: "bold"
     },
     textInput: {
         height: 60,
