@@ -18,6 +18,9 @@ import { SinpakuCard, KokyuuCard} from "../cards/ItemCard"
 import { gotSinpakuKokyuuData } from "../actions/data"
 import { gotFaceData } from "../actions/data"
 
+const HOST_NAME = "192.168.1.111"
+const PORT = 9001
+
 /* ------------------ Start MQTT --------------------- */
 //Set up an in-memory alternative to global localStorage 
 const myStorage = {
@@ -31,7 +34,7 @@ const myStorage = {
 };
 
 // Create a client instance 
-const client = new Client({ uri: 'ws://192.168.1.111:9001/ws', clientId: 'mk' + (Math.random()*100).toString(), storage: myStorage });
+const client = new Client({ uri: `ws://${HOST_NAME}:${PORT}/ws`, clientId: 'mk' + (Math.random()*100).toString(), storage: myStorage });
 
 // set event handlers 
 client.on('connectionLost', (responseObject) => {
@@ -165,24 +168,32 @@ class HomePage extends Component {
     
     /* Handle render data */
     componentWillReceiveProps(nextProps) {
-        var nextData = JSON.parse(nextProps.data)
-        var preData = JSON.parse(this.props.data)
-        console.log("WillReceiveProps data: ", nextData)
-        var { joyEmo, heart, breath } = (nextData)
-        if(joyEmo) {
-            console.log("joyEmo: ", joyEmo)
-            this._handleSmileElement(parseInt(joyEmo))
-            this.setState({
-                heart: preData.heart,
-                breath: preData.breath
-            })
-        }
-        if(heart && breath) {
-            this.setState({
-                heart: heart,
-                breath: breath
-            })
-        }
+        if(!_.isEmpty(this.props.data) && !_.isEmpty(nextProps.data)) {
+            var nextData = JSON.parse(nextProps.data)
+            var preData = JSON.parse(this.props.data)
+            console.log("WillReceiveProps data: ", nextData)
+            var { joyEmo, heart, breath } = (nextData)
+
+            if(joyEmo) {
+                console.log("joyEmo: ", joyEmo)
+                this._handleSmileElement(parseInt(joyEmo))
+                this.setState({
+                    heart: preData.heart,
+                    breath: preData.breath
+                })
+            }
+            if(heart && breath) {
+                this.setState({
+                    heart: heart,
+                    breath: breath
+                })
+            }
+        }   
+    }
+
+    componentDidMount() {
+        //TODO: MOVE Paho client here
+
     }
 
     render () {
@@ -237,6 +248,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#ECECEC",
         flex: 1,
         flexDirection: "column",
+        justifyContent: "flex-start",
         padding: 5,
     },
     header: {
@@ -249,9 +261,9 @@ const styles = StyleSheet.create({
         paddingLeft: 10
     },
     percentItemView: {
-        flex:1,
+        // flexGrow:1,
         flexDirection: "column",
-        alignItems: "center"
+        alignItems: "flex-start"
     },
     percentItem: {
         width: 80,
@@ -264,6 +276,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#ff75aa"
     },
     imageContainer: {
+        // flexGrow:2,
         alignItems: "center",
         borderColor: "#ff75aa",
         borderWidth: 5
