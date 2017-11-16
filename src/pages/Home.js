@@ -1,7 +1,5 @@
 import React, { Component } from 'react'
 import PropTypes from "prop-types"
-import { Client, Message } from 'react-native-paho-mqtt';
-import { AsyncStorage } from 'react-native';
 import {
   StyleSheet,
   Text,
@@ -15,65 +13,7 @@ import { connect } from "react-redux"
 import * as _ from "lodash"
 
 import { SinpakuCard, KokyuuCard} from "../cards/ItemCard"
-import { gotSinpakuKokyuuData } from "../actions/data"
-import { gotFaceData } from "../actions/data"
 
-const HOST_NAME = "192.168.1.111"
-const PORT = 9001
-
-/* ------------------ Start MQTT --------------------- */
-//Set up an in-memory alternative to global localStorage 
-const myStorage = {
-  setItem: (key, item) => {
-    myStorage[key] = item;
-  },
-  getItem: (key) => myStorage[key],
-  removeItem: (key) => {
-    delete myStorage[key];
-  },
-};
-
-// Create a client instance 
-const client = new Client({ uri: `ws://${HOST_NAME}:${PORT}/ws`, clientId: 'mk' + (Math.random()*100).toString(), storage: myStorage });
-
-// set event handlers 
-client.on('connectionLost', (responseObject) => {
-  if (responseObject.errorCode !== 0) {
-    console.log(responseObject.errorMessage);
-  }
-});
-client.on('messageReceived', (message) => {
-    var topic = message.destinationName
-    var data = message.payloadString
-    console.log(topic)
-    // console.log("onMessageArrived: " + data);
-    if(topic == "microsensor/micro") {
-        /* Dispatch data to update sinpaku kokyuu UI */
-        console.log("on micro MessageArrived: " + data);
-        gotSinpakuKokyuuData(data)
-    }else if(topic == "camera") {
-        console.log("on camera MessageArrived: " + data);
-         /* Dispatch data to update 笑顔 UI */
-         gotFaceData(data)
-    }
-    
-});
- 
-// connect the client 
-client.connect()
-  .then(() => {
-    // Once a connection has been made, make a subscription and send a message. 
-    console.log("*********** onConnect ****************");
-    return client.subscribe("#");
-  })
-  .catch((responseObject) => {
-    if (responseObject.errorCode !== 0) {
-      console.log('onConnectionLost:' + responseObject.errorMessage);
-    }
-  })
-
-/* --------------------- End MQTT --------------------------- */
-var setIntervalId
 class HomePage extends Component {
     // setup tabar options
     static navigationOptions = {
@@ -147,54 +87,45 @@ class HomePage extends Component {
         
     }
 
-    // /* Generate random data for smile Item */
-    // testSmileBgColor() {
-    //     return setInterval(() => {
-    //         var index = Math.floor((Math.random() * 10))    /* Return a number btw 0-9 */
-    //         this.updateSmileBgColor(index)
-    //     }, 3000)
-    // }
+    componentDidMount() {
+        console.log("HOME MOUNTED")
+    }
 
-    // componentDidMount() {
-    //     console.log("HOME MOUNTED")
-    //     //setIntervalId = this.testSmileBgColor()
-    // }
-
-    // /* When component will unmounted, then clear the setInterval */
-    // componentWillUnmount(){
-    //     /* We hv to clear this setInterval to prevent calling setState on unmounted component */
-    //     //clearInterval(setIntervalId)
-    // }
+    /* When component will unmounted, then clear the setInterval */
+    componentWillUnmount(){
+        console.log("HOME WILL UNMOUNTED")
+    }
     
     /* Handle render data */
     componentWillReceiveProps(nextProps) {
         if(!_.isEmpty(this.props.data) && !_.isEmpty(nextProps.data)) {
+            console.log("NEXT PROPS: ", nextProps.data)
             var nextData = JSON.parse(nextProps.data)
             var preData = JSON.parse(this.props.data)
             console.log("WillReceiveProps data: ", nextData)
-            var { joyEmo, heart, breath } = (nextData)
-
-            if(joyEmo) {
-                console.log("joyEmo: ", joyEmo)
-                this._handleSmileElement(parseInt(joyEmo))
+            var { joy, heart, breath } = (nextData)
+            if(joy) {
+                console.log("joy: ", joy)
+                this._handleSmileElement(parseInt(joy))
                 this.setState({
                     heart: preData.heart,
                     breath: preData.breath
                 })
             }
-            if(heart && breath) {
+            if(heart || breath) {
                 this.setState({
                     heart: heart,
                     breath: breath
                 })
             }
+            
         }   
     }
 
-    componentDidMount() {
-        //TODO: MOVE Paho client here
+    // componentDidMount() {
+    //     //TODO: MOVE Paho client here
 
-    }
+    // }
 
     render () {
         /* TODO: Observe 表情データ & convert 表情データ to 0-9 (0%:noUpdate, 10%:0index,20%:1index) */

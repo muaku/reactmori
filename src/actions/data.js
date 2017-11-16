@@ -1,4 +1,4 @@
-import { SINPAKU_KOKYUU_DATA_IN, FACE_DATA_IN } from "../types"
+import { SINPAKU_KOKYUU_DATA_IN, FACE_DATA_IN, MQTT_CONNECTION } from "../types"
 import { store } from "../store"
 
 let dispatch = store.dispatch
@@ -22,5 +22,12 @@ export const gotFaceData = (data) => {
     dispatch({
         type: FACE_DATA_IN,
         data
+    })
+}
+
+export const reportMqttConnection = (status) => {
+    dispatch({
+        type: MQTT_CONNECTION,
+        status
     })
 }
